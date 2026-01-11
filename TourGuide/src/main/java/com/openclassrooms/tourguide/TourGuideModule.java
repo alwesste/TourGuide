@@ -11,8 +11,7 @@ import com.openclassrooms.tourguide.service.RewardsService;
 public class TourGuideModule {
 	
 	@Bean
-	public GpsUtil getGpsUtil() {
-		return new GpsUtil();
+	public GpsUtil getGpsUtil() {	return new GpsUtil();
 	}
 	
 	@Bean

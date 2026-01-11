@@ -1,7 +1,11 @@
 package com.openclassrooms.tourguide.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.openclassrooms.tourguide.tracker.Tracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import gpsUtil.GpsUtil;
@@ -15,11 +19,11 @@ import com.openclassrooms.tourguide.user.UserReward;
 @Service
 public class RewardsService {
     private static final double STATUTE_MILES_PER_NAUTICAL_MILE = 1.15077945;
-
+	private Logger logger = LoggerFactory.getLogger(RewardsService.class);
 	// proximity in miles
     private int defaultProximityBuffer = 10;
 	private int proximityBuffer = defaultProximityBuffer;
-	private int attractionProximityRange = 200;
+	private int attractionProximityRange = Integer.MAX_VALUE;
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
 	
@@ -37,7 +41,8 @@ public class RewardsService {
 	}
 	
 	public void calculateRewards(User user) {
-		List<VisitedLocation> userLocations = user.getVisitedLocations();
+		// Ajout d'un Array pour evite le ConcurrentModificationException
+		List<VisitedLocation> userLocations = new ArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 		
 		for(VisitedLocation visitedLocation : userLocations) {
@@ -52,6 +57,7 @@ public class RewardsService {
 	}
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
+		System.out.println("Distance :" + getDistance(attraction, location));
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
 	
@@ -59,7 +65,7 @@ public class RewardsService {
 		return getDistance(attraction, visitedLocation.location) > proximityBuffer ? false : true;
 	}
 	
-	private int getRewardPoints(Attraction attraction, User user) {
+	public int getRewardPoints(Attraction attraction, User user) {
 		return rewardsCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId());
 	}
 	
@@ -74,7 +80,7 @@ public class RewardsService {
 
         double nauticalMiles = 60 * Math.toDegrees(angle);
         double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
-        return statuteMiles;
+		return statuteMiles;
 	}
 
 }
