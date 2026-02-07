@@ -71,7 +71,7 @@ public class User {
 
 	// Correction de la condition au niveau du filtre
 	public void addUserReward(UserReward userReward) {
-		if(userRewards.stream().filter(r -> r.attraction.attractionName.equals(userReward.attraction.attractionName)).count() == 0) {
+		if(userRewards.stream().filter(r -> r.attraction.attractionName.equalsIgnoreCase(userReward.attraction.attractionName)).count() == 0) {
 			userRewards.add(userReward);
 		}
 	}
