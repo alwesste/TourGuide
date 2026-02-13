@@ -49,15 +49,6 @@ public class TourGuideController {
     public List<AttractionNearbyDTO> getNearbyAttractions(@RequestParam String userName) {
         return tourGuideService.getNearByAttractions(getUser(userName));
     }
-
-
-//    @RequestMapping("/getNearbyAttractions")
-//    public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
-//    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-//        List<Attraction> nearbyAttraction = tourGuideService.getNearByAttractions(visitedLocation);
-//        logger.debug("nearbyAttraction : {}", nearbyAttraction);
-//        return nearbyAttraction;
-//    }
     
     @RequestMapping("/getRewards") 
     public List<UserReward> getRewards(@RequestParam String userName) {

@@ -120,8 +120,15 @@ public class TourGuideService {
     }
 
 
-
-    // Fonction qui vise à retourner un JSON avec les 5 attractions les plus proches de l'utilisateur.
+    /**
+     * Récupère les 5 attractions les plus proches de la position actuelle de l'utilisateur.
+     *  *
+     *  * Pour chaque attraction disponible, calcule la distance par rapport à la dernière
+     *  * localisation de l'utilisateur et les points de récompense associés.
+     *  * Les attractions sont triées par distance croissante et seules les 5 premières sont retournées.
+     * @param user l'utilisateur connecte dont on souhaite connaitre les attractions à proximite
+     * @return une liste des 5 attractions les plus proches avec leurs informations
+     */
     public List<AttractionNearbyDTO> getNearByAttractions(User user) {
         List<AttractionNearbyDTO> nearbyAttractions = new ArrayList<>();
         VisitedLocation visitedLocation = getUserLocation(user);

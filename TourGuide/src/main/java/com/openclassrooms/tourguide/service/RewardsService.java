@@ -32,7 +32,7 @@ public class RewardsService {
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
 		this.rewardsCentral = rewardCentral;
-		int poolSize = 45;
+		int poolSize = 50;
         this.calculateRewardExecutor = Executors.newFixedThreadPool(poolSize);
 		logger.info("calculateRewardExecutor initialisé avec {} threads", poolSize);
 
