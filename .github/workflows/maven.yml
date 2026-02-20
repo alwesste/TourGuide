@@ -28,7 +28,7 @@ jobs:
         cache: maven
         
     - name: Compile and test with Maven TourGuide project
-      run: mvn -B verify --file pom.xml
+      run: mvn -B verify --file TourGuide.pom.xml
 
     - name: Build and artifact TourGuide project
       uses: actions/upload-artifact@v4
