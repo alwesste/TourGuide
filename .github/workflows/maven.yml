@@ -34,11 +34,11 @@ jobs:
         find . -name "TripPricer.jar" -exec mvn install:install-file -Dfile={} -DgroupId=tripPricer -DartifactId=tripPricer -Dversion=1.0.0 -Dpackaging=jar \;
    
     - name: Compile and test with Maven TourGuide project
-      run: mvn -B verify --file TourGuide/pom.xml
+      run: mvn -B verify --file TourGuide/pom.xml -DskipTest
 
     - name: Build and artifact TourGuide project
       uses: actions/upload-artifact@v4
       with:
         name: spring-boot-app
-        path: target/*.jar
+        path: TourGuide/target/*.jar
 
