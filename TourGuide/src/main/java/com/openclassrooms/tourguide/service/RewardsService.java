@@ -24,7 +24,7 @@ public class RewardsService {
 	// proximity in miles
     private int defaultProximityBuffer = 10;
 	private int proximityBuffer = defaultProximityBuffer;
-	private int attractionProximityRange = Integer.MAX_VALUE;
+	private int attractionProximityRange = 200;
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
 	private final ExecutorService calculateRewardExecutor;
@@ -54,9 +54,7 @@ public class RewardsService {
 
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
-				if(user.getUserRewards().stream()
-						.filter(r -> r.attraction.attractionName.equalsIgnoreCase(attraction.attractionName))
-						.count() == 0) {
+				if(user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equalsIgnoreCase(attraction.attractionName))) {
 					if(nearAttraction(visitedLocation, attraction)) {
 						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
 					}
@@ -76,7 +74,6 @@ public class RewardsService {
 
 
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
-		System.out.println("Distance :" + getDistance(attraction, location));
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
 	}
 

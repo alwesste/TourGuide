@@ -8,7 +8,6 @@ import com.openclassrooms.tourguide.tracker.Tracker;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 import gpsUtil.GpsUtil;
-import gpsUtil.location.Attraction;
 import gpsUtil.location.Location;
 import gpsUtil.location.VisitedLocation;
 import org.slf4j.Logger;
@@ -35,7 +34,6 @@ public class TourGuideService {
     boolean testMode = true;
     private final ExecutorService trackLocationExecutor;
     private int poolSize = 10;
-//    int poolSize = Math.min(Runtime.getRuntime().availableProcessors() * 2, 50);
 
     public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
         this.gpsUtil = gpsUtil;
@@ -89,8 +87,13 @@ public class TourGuideService {
         return providers;
     }
 
-    // ecrire une methode qui prend une liste de users
-    // inside mettre son pool de thread
+    /**
+     * Enregistre la localisation actuelle d'un utilisateur, l'ajoute à son historique
+     * de lieux visités, puis calcule les récompenses éventuelles pour les attractions
+     * à proximité.
+     * @param user utilisateur que l'on veut suivre la localisation
+     * @return un lieu visite
+     */
     public VisitedLocation trackUserLocation(User user) {
         VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
         user.addToVisitedLocations(visitedLocation);
@@ -98,7 +101,12 @@ public class TourGuideService {
         return visitedLocation;
     }
 
-    //CompletableyFuture
+    /**
+     * Suit la localisation de plusieurs utilisateurs en parallèle en utilisant
+     * un pool de threads pour améliorer les performances.
+     * @param users utilisateur dont on veut suivre la localisation
+     * @return une liste de localisation
+     */
     public List<VisitedLocation> trackAllUserLocation(List<User> users) {
         logger.info("Début du tracking de {} utilisateurs", users.size());
 
@@ -121,49 +129,41 @@ public class TourGuideService {
 
 
     /**
-     * Récupère les 5 attractions les plus proches de la position actuelle de l'utilisateur.
-     *  *
-     *  * Pour chaque attraction disponible, calcule la distance par rapport à la dernière
-     *  * localisation de l'utilisateur et les points de récompense associés.
-     *  * Les attractions sont triées par distance croissante et seules les 5 premières sont retournées.
+     * Récupère les 5 attractions les plus proches de la position actuelle de l'utilisateur. Pour chaque attraction disponible on calcule la distance par rapport à la dernière
+     * localisation de l'utilisateur et les points de récompense associés. On utilise CompletableFuture pour lancer plusieurs threads en parallel
+     * Les attractions sont triées par distance croissante et seules les 5 premières sont retournées.
      * @param user l'utilisateur connecte dont on souhaite connaitre les attractions à proximite
      * @return une liste des 5 attractions les plus proches avec leurs informations
      */
     public List<AttractionNearbyDTO> getNearByAttractions(User user) {
-        List<AttractionNearbyDTO> nearbyAttractions = new ArrayList<>();
         VisitedLocation visitedLocation = getUserLocation(user);
+        UserLocation userLocation = new UserLocation(
+                visitedLocation.location.latitude,
+                visitedLocation.location.longitude
+        );
 
-        for (Attraction attraction : gpsUtil.getAttractions()) {
-            AttractionLocation attractionLocation = new AttractionLocation(
-                    attraction.latitude,
-                    attraction.longitude
-            );
-            UserLocation userLocation = new UserLocation(
-                    visitedLocation.location.latitude,
-                    visitedLocation.location.longitude
-            );
+        List<CompletableFuture<AttractionNearbyDTO>> futures = gpsUtil.getAttractions()
+                .stream()
+                .map(attraction -> CompletableFuture.supplyAsync(() -> {
+                    double distanceFromAttraction = rewardsService.getDistance(visitedLocation.location, attraction);
+                    int rewardPoint = rewardsService.getRewardPoints(attraction, user);
+                    AttractionLocation attractionLocation = new AttractionLocation(attraction.latitude, attraction.longitude);
+                    return new AttractionNearbyDTO(
+                            attraction.attractionName,
+                            attractionLocation,
+                            userLocation,
+                            distanceFromAttraction,
+                            rewardPoint
+                    );
+                }, trackLocationExecutor))
+                .toList();
 
-            double distanceFromAttraction = rewardsService.getDistance(visitedLocation.location, attraction);
-            int rewardPoint = rewardsService.getRewardPoints(attraction, user);
-
-            AttractionNearbyDTO attractionNearby = new AttractionNearbyDTO(
-                    attraction.attractionName,
-                    attractionLocation,
-                    userLocation,
-                    distanceFromAttraction,
-                    rewardPoint
-            );
-
-            nearbyAttractions.add(attractionNearby);
-
-        }
-
-        nearbyAttractions.sort(Comparator.comparingDouble(AttractionNearbyDTO::getDistanceFromAttraction));
-        return nearbyAttractions.stream()
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .sorted(Comparator.comparingDouble(AttractionNearbyDTO::getDistanceFromAttraction))
                 .limit(5)
                 .collect(toList());
     }
-
 
     private void addShutDownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
